@@ -1,9 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Title from "../../components/Title";
-import { assets, dashboardDummyData } from "../../assets/assets";
+import { assets } from "../../assets/assets";
+import { useUser } from "@clerk/clerk-react";
+import { apiRequest } from "../../config/api";
 
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState(dashboardDummyData);
+  const { user } = useUser();
+  const [dashboardData, setDashboardData] = useState({
+    totalBookings: 0,
+    totalRevenue: 0,
+    bookings: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      if (!user) return;
+      try {
+        const data = await apiRequest("/api/bookings/owner-dashboard", {}, user.id);
+        if (data.success) {
+          setDashboardData(data.stats);
+        }
+      } catch (err) {
+        console.error("Error fetching dashboard statistics:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardStats();
+  }, [user]);
+
+  if (loading) {
+    return <p className="text-gray-500 py-10">Loading dashboard stats...</p>;
+  }
+
   return (
     <div>
       <Title
@@ -65,26 +95,34 @@ const Dashboard = () => {
             </tr>
           </thead>
           <tbody className="text-sm">
-            {dashboardData.bookings.map((item, index) => (
-              <tr key={index}>
-                <td className="py-3 px-4 text-gray-700 border-t border-gray-300">
-                  {item.user.username}
-                </td>
-                <td className="py-3 px-4 text-gray-700 border-t border-gray-300 max-sm:hidden">
-                  {item.room.roomType}
-                </td>
-                <td className="py-3 px-4 text-gray-700 border-t border-gray-300 text-center">
-                  $ {item.totalPrice}
-                </td>
-                <td className="py-3 px-4 border-t border-gray-300 flex">
-                  <button
-                    className={`py-1 px-3 text-xs rounded-full mx-auto ${item.isPaid ? "bg-green-200 text-green-600" : "bg-amber-200 text-yellow-600"}`}
-                  >
-                    {item.isPaid ? "Completed" : "Pending"}
-                  </button>
+            {dashboardData.bookings.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="py-8 text-center text-gray-500">
+                  No bookings found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              dashboardData.bookings.map((item, index) => (
+                <tr key={index}>
+                  <td className="py-3 px-4 text-gray-700 border-t border-gray-300">
+                    {item.user?.username || "Guest User"}
+                  </td>
+                  <td className="py-3 px-4 text-gray-700 border-t border-gray-300 max-sm:hidden">
+                    {item.room?.roomType || "Standard"}
+                  </td>
+                  <td className="py-3 px-4 text-gray-700 border-t border-gray-300 text-center">
+                    $ {item.totalPrice}
+                  </td>
+                  <td className="py-3 px-4 border-t border-gray-300 flex">
+                    <button
+                      className={`py-1 px-3 text-xs rounded-full mx-auto ${item.isPaid ? "bg-green-200 text-green-600" : "bg-amber-200 text-yellow-600"}`}
+                    >
+                      {item.isPaid ? "Completed" : "Pending"}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -4,6 +4,9 @@ import cors from 'cors';
 import connectDB from './configs/db.js';
 import { clerkMiddleware } from "@clerk/express";
 import clerkWebhooks from './controllers/clerkWebhooks.js';
+import userRouter from './routes/users.js';
+import roomRouter from './routes/rooms.js';
+import bookingRouter from './routes/bookings.js';
 
 connectDB()
 
@@ -18,9 +21,14 @@ app.use(express.json({
 }))
 app.use(clerkMiddleware())
 
-// API to listen to Clerk Webhooks
+// Serve Static Uploads
+app.use('/uploads', express.static('uploads'));
 
+// API Routes
 app.use("/api/clerk", clerkWebhooks);
+app.use("/api/users", userRouter);
+app.use("/api/rooms", roomRouter);
+app.use("/api/bookings", bookingRouter);
 
 app.get('/', (req, res) => res.send("API is working"))
 

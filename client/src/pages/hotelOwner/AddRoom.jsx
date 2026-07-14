@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import Title from "../../components/Title";
 import { assets } from "../../assets/assets";
+import { useUser } from "@clerk/clerk-react";
+import { apiRequest } from "../../config/api";
 
 const AddRoom = () => {
+  const { user } = useUser();
   const [images, setImages] = useState({
     1: null,
     2: null,
@@ -20,8 +23,62 @@ const AddRoom = () => {
       "Pool Access": false,
     },
   });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return alert("Please log in first.");
+    if (!inputs.roomType) return alert("Please select a room type.");
+    if (!inputs.pricePerNight || inputs.pricePerNight <= 0) return alert("Please enter a valid price per night.");
+
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append("roomType", inputs.roomType);
+    formData.append("pricePerNight", inputs.pricePerNight);
+
+    // Active amenities array
+    const activeAmenities = Object.keys(inputs.amenities).filter(
+      (key) => inputs.amenities[key]
+    );
+    formData.append("amenities", JSON.stringify(activeAmenities));
+
+    // Append images
+    Object.keys(images).forEach((key) => {
+      if (images[key]) {
+        formData.append("images", images[key]);
+      }
+    });
+
+    try {
+      const data = await apiRequest("/api/rooms/add", {
+        method: "POST",
+        body: formData,
+      }, user.id);
+
+      alert(data.message || "Room added successfully!");
+      // Reset form
+      setImages({ 1: null, 2: null, 3: null, 4: null });
+      setInputs({
+        roomType: "",
+        pricePerNight: 0,
+        amenities: {
+          "Free WiFi": false,
+          "Free Breakfast": false,
+          "Room Service": false,
+          "Pool Access": false,
+        },
+      });
+    } catch (err) {
+      alert(err.message || "Failed to add room");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <form>
+    <form onSubmit={handleSubmit}>
       <Title
         align="left"
         font="outfit"
@@ -30,12 +87,12 @@ const AddRoom = () => {
       />
       {/* Upload Area For Images */}
 
-      <p className="text-gray-800 mt-10">Images</p>
+      <p className="text-gray-800 mt-10 font-medium">Images</p>
       <div className="grid grid-cols-2 sm:flex gap-4 my-2 flex-wrap">
         {Object.keys(images).map((key) => (
           <label htmlFor={`roomImage${key}`} key={key}>
             <img
-              className="max-h-13 cursor-pointer opacity-80"
+              className="w-24 h-24 cursor-pointer opacity-80 rounded border border-gray-300 object-cover"
               src={
                 images[key]
                   ? URL.createObjectURL(images[key])
@@ -59,8 +116,10 @@ const AddRoom = () => {
         <div className="flex-1 max-w-48">
           <p className="text-gray-800 mt-4">Room Type</p>
           <select
+            value={inputs.roomType}
             onChange={(e) => setInputs({ ...inputs, roomType: e.target.value })}
-            className="border opacity-70 border-gray-300 mt-1 rounder p-2 w-full"
+            className="border opacity-70 border-gray-300 mt-1 rounded p-2 w-full"
+            required
           >
             <option value="">Select Room Type</option>
             <option value="Single Bed">Single Bed</option>
@@ -81,16 +140,17 @@ const AddRoom = () => {
             onChange={(e) =>
               setInputs({ ...inputs, pricePerNight: e.target.value })
             }
+            required
           />
         </div>
       </div>
       <p className="text-gray-800 mt-4">Amenities</p>
-      <div className="flex flex-col flex-wrap mt-1 text-gray-400 max-w-sm">
+      <div className="flex flex-col flex-wrap mt-1 text-gray-600 max-w-sm">
         {Object.keys(inputs.amenities).map((amenity, index) => (
-          <div key={index}>
+          <div key={index} className="flex items-center gap-2 mt-1.5">
             <input
               type="checkbox"
-              id={`amenities ${index + 1}`}
+              id={`amenities-${index + 1}`}
               checked={inputs.amenities[amenity]}
               onChange={() =>
                 setInputs({
@@ -102,12 +162,16 @@ const AddRoom = () => {
                 })
               }
             />
-            <label htmlFor={`amenities ${index + 1}`}> {amenity}</label>
+            <label htmlFor={`amenities-${index + 1}`} className="text-sm select-none cursor-pointer"> {amenity}</label>
           </div>
         ))}
       </div>
-      <button className="bg-primary text-white px-8 py-2 rounded mt-8 cursor-pointer">
-        Add Room
+      <button 
+        type="submit" 
+        disabled={loading}
+        className="bg-primary hover:bg-primary-dull text-white px-8 py-2 rounded mt-8 cursor-pointer disabled:opacity-50"
+      >
+        {loading ? "Adding..." : "Add Room"}
       </button>
     </form>
   );

@@ -1,22 +1,48 @@
-import React from "react";
-import { roomsDummyData } from "../assets/assets";
+import React, { useState, useEffect } from "react";
 import HotelCard from "./HotelCard";
 import Title from "./Title";
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../config/api";
 
 const FeaturedDestination = () => {
   const navigate = useNavigate();
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const data = await apiRequest("/api/rooms/all");
+        if (data.success) {
+          setRooms(data.rooms);
+        }
+      } catch (err) {
+        console.error("Error fetching featured rooms:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
+
   return (
     <div className="flex flex-col items-center px-6 md:px-16 lg:px-24 bg-slate-50 py-20">
       <Title
         title="Featured Destinations"
-        subTitle="Discover our handpicked selection of exceptional propertied around the world, offering unparalleled luxury and unforgattable experiences."
+        subTitle="Discover our handpicked selection of exceptional properties around the world, offering unparalleled luxury and unforgettable experiences."
       />
-      <div className="flex flex-wrap items-center justify-center gap-6 mt-20">
-        {roomsDummyData.slice(0, 4).map((room, index) => (
-          <HotelCard key={room._id} room={room} index={index} />
-        ))}
-      </div>
+      
+      {loading ? (
+        <p className="mt-20 text-gray-500">Loading featured destinations...</p>
+      ) : rooms.length === 0 ? (
+        <p className="mt-20 text-gray-500">No destinations available at the moment.</p>
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-6 mt-20">
+          {rooms.slice(0, 4).map((room, index) => (
+            <HotelCard key={room._id} room={room} index={index} />
+          ))}
+        </div>
+      )}
 
       <button
         onClick={() => {
