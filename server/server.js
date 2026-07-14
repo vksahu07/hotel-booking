@@ -22,7 +22,7 @@ app.use(express.json({
 app.use(clerkMiddleware())
 
 // Serve Static Uploads
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(process.env.VERCEL ? '/tmp' : 'uploads'));
 
 // API Routes
 app.use("/api/clerk", clerkWebhooks);

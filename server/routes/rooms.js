@@ -5,9 +5,13 @@ import { addRoom, getOwnerRooms, getAllRooms, getRoomById, toggleAvailability } 
 import { requireAuth } from "../middleware/auth.js";
 
 // Ensure uploads folder exists
-const uploadDir = "./uploads";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = process.env.VERCEL ? "/tmp" : "./uploads";
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn("Could not create uploads directory, falling back to temp dir:", err.message);
 }
 
 // Multer configuration for file uploads
