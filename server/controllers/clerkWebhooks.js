@@ -1,40 +1,37 @@
 import User from "../models/User.js";
 import { Webhook } from "svix";
 
-const clerkWebhooks = async () => {
+const clerkWebhooks = async (req, res) => {
 	try {
 
 		// Create a Svix instance with clerk webhook secret.
-      const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET)
+		const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET)
    
 		// Getting Headers
-		const header = {
+		const headers = {
 			"svix-id": req.headers["svix-id"],
-			"svix-timestamp": req.header["svix-timestamp"],
-			"svix-signature": req.header["svix-signature"],
-		
+			"svix-timestamp": req.headers["svix-timestamp"],
+			"svix-signature": req.headers["svix-signature"],
 		};
 
-		// Verifying Header
-
-		await whook.verify(JSON.stringify(req.body), headers)
+		// Verifying Header using rawBody Buffer
+		const payload = req.rawBody ? req.rawBody.toString() : JSON.stringify(req.body);
+		await whook.verify(payload, headers)
 
 		// Getting Data from request body
-
 		const { data, type } = req.body
 		
 		const userData = {
 			_id: data.id,
-			email: data.email_addressess[0].email_addressess,
-			username: data.first_name + " " + data.last_name,
+			email: (data.email_addresses && data.email_addresses[0]) ? data.email_addresses[0].email_address : "",
+			username: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
 			image: data.image_url,
 		}
           
 		// Switch cases for different Events
-
 		switch (type) {
 			case "user.created": {
-				await User.create(userDate);
+				await User.create(userData);
 				break;
 			}
 
@@ -51,7 +48,7 @@ const clerkWebhooks = async () => {
 			default:
 				break;	
 		}
-		res.JSON({success: true, message: "Webhook Recieved"})
+		res.json({success: true, message: "Webhook Received"})
 
 	} catch (error) {
 		console.log(error.message);
