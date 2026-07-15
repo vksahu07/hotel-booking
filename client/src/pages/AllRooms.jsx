@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { assets, facilityIcons } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import StarRating from "../components/StarRating";
 import { apiRequest } from "../config/api";
 
@@ -33,6 +33,7 @@ const RadioButton = ({ label, selected = false, onChange = () => {} }) => {
 
 const AllRooms = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openFilters, setOpenFilters] = useState(false);
@@ -58,8 +59,11 @@ const AllRooms = () => {
   // Fetch Rooms
   useEffect(() => {
     const fetchRooms = async () => {
+      setLoading(true);
       try {
-        const data = await apiRequest("/api/rooms/all");
+        const cityQuery = searchParams.get("city");
+        const endpoint = cityQuery ? `/api/rooms/all?city=${encodeURIComponent(cityQuery)}` : "/api/rooms/all";
+        const data = await apiRequest(endpoint);
         if (data.success) {
           setRooms(data.rooms);
         }
@@ -70,7 +74,7 @@ const AllRooms = () => {
       }
     };
     fetchRooms();
-  }, []);
+  }, [searchParams]);
 
   // Filter Handlers
   const handleTypeChange = (checked, label) => {
@@ -139,6 +143,17 @@ const AllRooms = () => {
             Take advantage of our limited-time offers and special packages to
             enhance your stay and create unforgettable memories.
           </p>
+          {searchParams.get("city") && (
+            <div className="flex items-center gap-3 bg-blue-50 border border-blue-200/60 rounded-lg px-4 py-2 mt-4 text-sm text-blue-800">
+              <span>Showing rooms in <strong>"{searchParams.get("city")}"</strong></span>
+              <button
+                onClick={() => setSearchParams({})}
+                className="font-semibold text-blue-600 hover:text-blue-900 underline cursor-pointer"
+              >
+                Clear search
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (

@@ -37,12 +37,22 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dbUser, setDbUser] = useState(null);
   const [showRegModal, setShowRegModal] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { openSignIn } = useClerk();
   const { user } = useUser();
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      navigate(`/rooms?city=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSearch(false);
+      setSearchQuery("");
+    }
+  };
 
   useEffect(() => {
     if (location.pathname !== "/") {
@@ -140,13 +150,53 @@ const Navbar = () => {
 
         {/* Desktop Right */}
         <div className="hidden md:flex items-center gap-4">
-          <img
-            src={assets.searchIcon}
-            alt="search"
-            className={`h-7 transition-all duration-500 ${
-              isScrolled ? "invert" : ""
-            }`}
-          />
+          {showSearch ? (
+            <div className="flex items-center gap-2 border border-gray-300 rounded-full px-3 py-1 bg-white/10 transition-all duration-300">
+              <input
+                type="text"
+                placeholder="Search city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchSubmit();
+                  }
+                }}
+                className={`bg-transparent text-sm outline-none w-28 lg:w-36 ${
+                  isScrolled ? "text-gray-800" : "text-white placeholder-white/70"
+                }`}
+                autoFocus
+              />
+              <img
+                onClick={handleSearchSubmit}
+                src={assets.searchIcon}
+                alt="search"
+                className={`h-5 cursor-pointer transition-all ${
+                  isScrolled ? "invert" : ""
+                }`}
+              />
+              <span
+                onClick={() => {
+                  setShowSearch(false);
+                  setSearchQuery("");
+                }}
+                className={`text-xs cursor-pointer select-none font-bold ml-1 ${
+                  isScrolled ? "text-gray-500 hover:text-gray-700" : "text-white/70 hover:text-white"
+                }`}
+              >
+                ✕
+              </span>
+            </div>
+          ) : (
+            <img
+              onClick={() => setShowSearch(true)}
+              src={assets.searchIcon}
+              alt="search"
+              className={`h-7 cursor-pointer transition-all duration-500 ${
+                isScrolled ? "invert" : ""
+              }`}
+            />
+          )}
 
           {user ? (
             <UserButton>

@@ -1,8 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { cities } from "../assets/assets";
 import { assets } from "../assets/assets";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const [destination, setDestination] = useState("");
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (destination.trim()) {
+      navigate(`/rooms?city=${encodeURIComponent(destination.trim())}`);
+    } else {
+      navigate("/rooms");
+    }
+  };
+
   return (
     <div className='flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 xl:px-32 text-white bg-[url("/src/assets/heroImage.png")] bg-np-repeat bg-cover bg-center h-screen'>
       <p className="bg-[#49B9FF]/50 px-3.5 py-1 rounded-full mt-20">
@@ -16,7 +29,7 @@ const Hero = () => {
         hotels and resorts. Start your journey today.
       </p>
 
-      <form className="bg-white text-gray-500 rounded-lg px-6 py-4  mt-8 flex flex-col md:flex-row max-md:items-start gap-4 max-md:mx-auto">
+      <form onSubmit={handleSearchSubmit} className="bg-white text-gray-500 rounded-lg px-6 py-4  mt-8 flex flex-col md:flex-row max-md:items-start gap-4 max-md:mx-auto">
         <div>
           <div className="flex items-center gap-2">
             <img src={assets.calenderIcon} alt="" className="h-4" />
@@ -26,6 +39,8 @@ const Hero = () => {
             list="destinations"
             id="destinationInput"
             type="text"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
             className=" rounded border border-gray-200 px-3 py-1.5 mt-1.5 text-sm outline-none"
             placeholder="Type here"
             required
