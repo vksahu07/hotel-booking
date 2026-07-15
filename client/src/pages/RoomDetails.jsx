@@ -8,6 +8,7 @@ import {
 } from "../assets/assets";
 import StarRating from "../components/StarRating";
 import { apiRequest } from "../config/api";
+import { getOptimizedImageUrl } from "../utils/imageOptimizer";
 
 const RoomDetails = () => {
   const { id } = useParams();
@@ -121,7 +122,7 @@ const RoomDetails = () => {
       <div className="flex flex-col lg:flex-row mt-6 gap-6">
         <div className="lg:w-1/2 w-full">
           <img
-            src={mainImage || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"}
+            src={getOptimizedImageUrl(mainImage, 1000) || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"}
             alt="Room image"
             className="w-full h-80 rounded-xl shadow-lg object-cover"
           />
@@ -132,9 +133,10 @@ const RoomDetails = () => {
               <img
                 onClick={() => setMainImage(image)}
                 key={index}
-                src={image}
+                src={getOptimizedImageUrl(image, 400)}
                 alt="Room Image"
                 className={`w-full h-36 rounded-xl shadow-md object-cover cursor-pointer ${mainImage === image && "outline-3 outline-orange-500"}`}
+                loading="lazy"
               />
             ))
           ) : (

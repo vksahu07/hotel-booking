@@ -3,6 +3,7 @@ import { assets, facilityIcons } from "../assets/assets";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import StarRating from "../components/StarRating";
 import { apiRequest } from "../config/api";
+import { getOptimizedImageUrl } from "../utils/imageOptimizer";
 
 const CheckBox = ({ label, selected = false, onChange = () => {} }) => {
   return (
@@ -171,10 +172,11 @@ const AllRooms = () => {
                   navigate(`/rooms/${room._id}`);
                   scrollTo(0, 0);
                 }}
-                src={room.images?.[0] || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"}
+                src={getOptimizedImageUrl(room.images?.[0], 600) || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"}
                 alt="hotel-img"
                 title="View Room Details"
                 className="max-h-65 w-full md:w-1/2 rounded-xl shadow-lg object-cover cursor-pointer"
+                loading="lazy"
               />
               <div className="w-full md:w-1/2 flex flex-col gap-2">
                 <p className="text-gray-500">{room.hotel?.city || "Unknown City"}</p>

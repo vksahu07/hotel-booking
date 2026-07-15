@@ -3,6 +3,7 @@ import Title from "../components/Title";
 import { assets } from "../assets/assets";
 import { useUser } from "@clerk/clerk-react";
 import { apiRequest } from "../config/api";
+import { getOptimizedImageUrl } from "../utils/imageOptimizer";
 
 const MyBookings = () => {
   const { user } = useUser();
@@ -74,9 +75,10 @@ const MyBookings = () => {
                 {/* Hotel Details */}
                 <div className="flex flex-col md:flex-row">
                   <img
-                    src={bookingItem.room?.images?.[0] || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"}
+                    src={getOptimizedImageUrl(bookingItem.room?.images?.[0], 600) || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"}
                     alt="hotel-img"
                     className="md:w-44 rounded shadow object-cover"
+                    loading="lazy"
                   />
                   <div className="flex flex-col gap-1.5 max-md:mt-3 min-md:ml-4">
                     <p className="font-playfair text-2xl">

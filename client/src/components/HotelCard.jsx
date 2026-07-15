@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { assets } from "../assets/assets";
+import { getOptimizedImageUrl } from "../utils/imageOptimizer";
 
 const HotelCard = ({ room, index }) => {
   return (
@@ -10,7 +11,7 @@ const HotelCard = ({ room, index }) => {
       onClick={() => scrollTo(0, 0)}
       key={room._id}
     >
-      <img src={room.images?.[0] || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"} alt="hotel-img" className="w-full h-48 object-cover" />
+      <img src={getOptimizedImageUrl(room.images?.[0], 600) || "https://images.unsplash.com/photo-1611891487122-2075b96244e1?q=80&w=600"} alt="hotel-img" className="w-full h-48 object-cover" loading="lazy" />
       {index % 2 === 0 && (
         <p className="px-3 py-1 absolute top-3 left-3 text-xs bg-white text-gray-800 font-medium rounded-full">
           Best Seller
