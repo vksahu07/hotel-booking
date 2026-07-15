@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import fs from "fs";
-import { addRoom, getOwnerRooms, getAllRooms, getRoomById, toggleAvailability } from "../controllers/roomController.js";
+import { addRoom, getOwnerRooms, getAllRooms, getRoomById, toggleAvailability, deleteRoom } from "../controllers/roomController.js";
 import { requireAuth } from "../middleware/auth.js";
 
 // Ensure uploads folder exists
@@ -35,5 +35,6 @@ router.get("/details/:id", getRoomById);
 router.post("/add", requireAuth, upload.array("images", 4), addRoom);
 router.get("/owner-rooms", requireAuth, getOwnerRooms);
 router.put("/toggle-availability/:id", requireAuth, toggleAvailability);
+router.delete("/delete/:id", requireAuth, deleteRoom);
 
 export default router;

@@ -2,6 +2,7 @@ import express from 'express';
 import "dotenv/config";
 import cors from 'cors';
 import connectDB from './configs/db.js';
+import connectCloudinary from './configs/cloudinary.js';
 import { clerkMiddleware } from "@clerk/express";
 import clerkWebhooks from './controllers/clerkWebhooks.js';
 import userRouter from './routes/users.js';
@@ -9,6 +10,7 @@ import roomRouter from './routes/rooms.js';
 import bookingRouter from './routes/bookings.js';
 
 connectDB()
+connectCloudinary()
 
 const app = express();
 app.use(cors()) // Enable Cross-Origin Resource Sharing

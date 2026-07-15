@@ -1,5 +1,7 @@
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 // Add a new room for the owner's hotel
 export const addRoom = async (req, res) => {
@@ -26,10 +28,26 @@ export const addRoom = async (req, res) => {
     // Process uploaded images
     const imageUrls = [];
     if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${file.filename}`;
-        imageUrls.push(fileUrl);
-      });
+      for (const file of req.files) {
+        try {
+          const uploadResult = await cloudinary.uploader.upload(file.path, {
+            resource_type: "image",
+            folder: "hotel_bookings",
+          });
+          imageUrls.push(uploadResult.secure_url);
+          // Delete local file after upload
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+        } catch (uploadError) {
+          console.error("Cloudinary upload failed for file:", file.path, uploadError.message);
+          // Still clean up local file if upload failed
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+          throw new Error("Failed to upload room images to Cloudinary");
+        }
+      }
     }
 
     const room = await Room.create({
@@ -133,6 +151,80 @@ export const toggleAvailability = async (req, res) => {
     await room.save();
 
     res.json({ success: true, message: `Room availability set to ${room.isAvailable}`, room });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Helper to extract Cloudinary public ID from URL
+const getPublicIdFromUrl = (url) => {
+  try {
+    const parts = url.split("/");
+    const uploadIndex = parts.indexOf("upload");
+    if (uploadIndex !== -1 && parts.length > uploadIndex + 2) {
+      let pathParts = parts.slice(uploadIndex + 1);
+      // Skip version folder if present (e.g. v12345678)
+      if (pathParts[0].startsWith("v") && /^\d+$/.test(pathParts[0].slice(1))) {
+        pathParts = pathParts.slice(1);
+      }
+      const fileWithExt = pathParts.join("/");
+      const publicId = fileWithExt.substring(0, fileWithExt.lastIndexOf("."));
+      return publicId;
+    }
+  } catch (error) {
+    console.error("Failed to parse public ID from url:", url, error);
+  }
+  return null;
+};
+
+// Delete room along with its Cloudinary images
+export const deleteRoom = async (req, res) => {
+  try {
+    const roomId = req.params.id;
+    const userId = req.userId;
+
+    const room = await Room.findById(roomId).populate("hotel");
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Room not found" });
+    }
+
+    // Verify room ownership
+    if (!room.hotel || room.hotel.owner !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized to delete this room" });
+    }
+
+    // Delete images from Cloudinary or local disk
+    if (room.images && room.images.length > 0) {
+      const uploadDir = process.env.VERCEL ? "/tmp" : "./uploads";
+      for (const imageUrl of room.images) {
+        if (imageUrl.includes("cloudinary.com")) {
+          const publicId = getPublicIdFromUrl(imageUrl);
+          if (publicId) {
+            try {
+              await cloudinary.uploader.destroy(publicId);
+            } catch (destroyError) {
+              console.error("Failed to delete image from Cloudinary:", publicId, destroyError.message);
+            }
+          }
+        } else if (imageUrl.includes("/uploads/")) {
+          const filename = imageUrl.split("/uploads/")[1];
+          const filePath = `${uploadDir}/${filename}`;
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+              console.log("Local file deleted successfully:", filePath);
+            } catch (unlinkError) {
+              console.error("Failed to delete local file:", filePath, unlinkError.message);
+            }
+          }
+        }
+      }
+    }
+
+    // Delete room document
+    await Room.findByIdAndDelete(roomId);
+
+    res.json({ success: true, message: "Room and associated images deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
